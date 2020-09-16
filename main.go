@@ -17,7 +17,12 @@ type waHandler struct {
 	startTime uint64
 }
 
-var phoneNumber, dirOutput string
+type param struct {
+	phoneNumber string
+	dirOutput string
+}
+
+var params param
 
 func main() {
 
@@ -26,16 +31,16 @@ func main() {
 		fmt.Println(err)
 	}
 
-	sessionOutput := flag.String("o", mydir, "an output dir")
+	sessionOutput := flag.String("o", mydir + "/sessions", "an output dir")
 	pN := flag.String("p", "6288", "phone number")
 
 	flag.Parse()
 
-	dirOutput := *sessionOutput
-	phoneNumber := *pN
+	params.dirOutput = *sessionOutput
+	params.phoneNumber = *pN
 
-	if dirOutput == mydir && phoneNumber == "6288" {
-		fmt.Println("example usage " + os.Args[0] + " -o ~/session -p 62872123123")
+	if params.dirOutput == mydir && params.phoneNumber == "6288" {
+		fmt.Println("example usage " + os.Args[0] + " -o ~/sessions -p 62872123123")
 		os.Exit(1)
 	}
 
@@ -61,7 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error disconnecting: %v\n", err)
 	}
-	if err := writeSession(session, phoneNumber); err != nil {
+	if err := writeSession(session, params.phoneNumber); err != nil {
 		log.Fatalf("error saving session: %v", err)
 	}
 }
@@ -82,7 +87,7 @@ func login(wac *whatsapp.Conn) error {
 	if err != nil {
 		return fmt.Errorf("error during login: %v\n", err)
 	}
-	err = writeSession(session, phoneNumber)
+	err = writeSession(session, params.phoneNumber)
 	if err != nil {
 		return fmt.Errorf("error saving session: %v\n", err)
 	}
@@ -105,14 +110,10 @@ func writeSession(session whatsapp.Session, phoneNumber string) error {
 }
 
 func getSessionName(phoneNumber string) string {
-	mydir, err := os.Getwd()
-	if err != nil {
-		fmt.Println(err)
+	if _, err := os.Stat(params.dirOutput); os.IsNotExist(err) {
+		os.MkdirAll(params.dirOutput, os.ModePerm)
 	}
-	if _, err := os.Stat(mydir); os.IsNotExist(err) {
-		os.MkdirAll(mydir, os.ModePerm)
-	}
-	return mydir + "/" + phoneNumber + ".gob"
+	return params.dirOutput + "/" + phoneNumber + ".gob"
 }
 
 //HandleError needs to be implemented to be a valid WhatsApp handler
