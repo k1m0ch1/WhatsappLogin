@@ -45,7 +45,7 @@ func main() {
 	}
 
 	wac, err := whatsapp.NewConn(1 * time.Second)
-	wac.SetClientVersion(0, 4, 2080)
+	wac.SetClientVersion(2, 2123, 7)
 	if err != nil {
 		log.Fatalf("error creating connection: %v\n", err)
 	}

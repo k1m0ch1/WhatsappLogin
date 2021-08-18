@@ -3,7 +3,7 @@ module github.com/k1m0ch1/WhatsappLogin
 go 1.15
 
 require (
-	github.com/Rhymen/go-whatsapp v0.1.0
+	github.com/Rhymen/go-whatsapp v0.1.1
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/mdp/qrterminal/v3 v3.0.0
