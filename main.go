@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
+	"fmt"
 	"log"
 	"os"
-	"fmt"
 	"time"
-	"flag"
 
-	qrcodeTerminal "github.com/mdp/qrterminal/v3"
 	whatsapp "github.com/Rhymen/go-whatsapp"
+	"github.com/joho/godotenv"
+	qrcodeTerminal "github.com/mdp/qrterminal/v3"
 )
 
 type waHandler struct {
@@ -19,7 +20,7 @@ type waHandler struct {
 
 type param struct {
 	phoneNumber string
-	dirOutput string
+	dirOutput   string
 }
 
 var params param
@@ -31,7 +32,14 @@ func main() {
 		fmt.Println(err)
 	}
 
-	sessionOutput := flag.String("o", mydir + "/sessions", "an output dir")
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	clientVersion := os.Getenv("CLIENT_VERSION")
+
+	sessionOutput := flag.String("o", mydir+"/sessions", "an output dir")
 	pN := flag.String("p", "6288", "phone number")
 
 	flag.Parse()
@@ -73,10 +81,10 @@ func main() {
 
 func login(wac *whatsapp.Conn) error {
 	qr := make(chan string)
-	go func(){
+	go func() {
 		config := qrcodeTerminal.Config{
-			Level: qrcodeTerminal.L,
-			Writer: os.Stdout,
+			Level:     qrcodeTerminal.L,
+			Writer:    os.Stdout,
 			BlackChar: qrcodeTerminal.BLACK,
 			WhiteChar: qrcodeTerminal.WHITE,
 			QuietZone: 1,
@@ -93,7 +101,6 @@ func login(wac *whatsapp.Conn) error {
 	}
 	return nil
 }
-
 
 func writeSession(session whatsapp.Session, phoneNumber string) error {
 	file, err := os.Create(getSessionName(phoneNumber))
