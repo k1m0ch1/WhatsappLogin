@@ -2,14 +2,17 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
+	"fmt"
 	"log"
 	"os"
-	"fmt"
+	"strconv"
+	"strings"
 	"time"
-	"flag"
 
-	qrcodeTerminal "github.com/mdp/qrterminal/v3"
 	whatsapp "github.com/Rhymen/go-whatsapp"
+	"github.com/joho/godotenv"
+	qrcodeTerminal "github.com/mdp/qrterminal/v3"
 )
 
 type waHandler struct {
@@ -19,7 +22,7 @@ type waHandler struct {
 
 type param struct {
 	phoneNumber string
-	dirOutput string
+	dirOutput   string
 }
 
 var params param
@@ -31,7 +34,12 @@ func main() {
 		fmt.Println(err)
 	}
 
-	sessionOutput := flag.String("o", mydir + "/sessions", "an output dir")
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	sessionOutput := flag.String("o", mydir+"/sessions", "an output dir")
 	pN := flag.String("p", "6288", "phone number")
 
 	flag.Parse()
@@ -45,11 +53,32 @@ func main() {
 	}
 
 	wac, err := whatsapp.NewConn(1 * time.Second)
-	wac.SetClientVersion(2, 2123, 7)
 	if err != nil {
 		log.Fatalf("error creating connection: %v\n", err)
 	}
+	var major, minor, patch int = 2, 2123, 7
 
+	if clientVersion := os.Getenv("CLIENT_VERSION"); clientVersion != "" {
+		cv := strings.Split(clientVersion, ".")
+		// Major, minor, patch all there
+		major, err = strconv.Atoi(cv[0])
+		if err != nil {
+			fmt.Println("Client version format wrong, major section is not int", err)
+			major = 2
+		}
+		minor, err = strconv.Atoi(cv[1])
+		if err != nil {
+			fmt.Println("Client version format wrong, minor section is not int", err)
+			minor = 2123
+		}
+		patch, err = strconv.Atoi(cv[2])
+		if err != nil {
+			fmt.Println("Client version format wrong, patch section is not int", err)
+			patch = 7
+		}
+	}
+
+	wac.SetClientVersion(major, minor, patch)
 	wac.AddHandler(&waHandler{wac, uint64(time.Now().Unix())})
 
 	if err := login(wac); err != nil {
@@ -73,10 +102,10 @@ func main() {
 
 func login(wac *whatsapp.Conn) error {
 	qr := make(chan string)
-	go func(){
+	go func() {
 		config := qrcodeTerminal.Config{
-			Level: qrcodeTerminal.L,
-			Writer: os.Stdout,
+			Level:     qrcodeTerminal.L,
+			Writer:    os.Stdout,
 			BlackChar: qrcodeTerminal.BLACK,
 			WhiteChar: qrcodeTerminal.WHITE,
 			QuietZone: 1,
@@ -93,7 +122,6 @@ func login(wac *whatsapp.Conn) error {
 	}
 	return nil
 }
-
 
 func writeSession(session whatsapp.Session, phoneNumber string) error {
 	file, err := os.Create(getSessionName(phoneNumber))
